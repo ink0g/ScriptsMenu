@@ -56,7 +56,12 @@ func main() {
 	if os.Getenv("ROFI_RETV") == "0" {
 		targetPath = "/"
 	} else {
-		targetPath = path.Join(os.Getenv("ROFI_DATA"), os.Args[1])
+		choice := os.Args[1]
+		if choice == ".." {
+			targetPath = path.Dir(os.Getenv("ROFI_DATA"))
+		} else {
+			targetPath = path.Join(os.Getenv("ROFI_DATA"), choice)
+		}	
 	}
 	
 	node, exists := menuMap[targetPath]
@@ -64,7 +69,7 @@ func main() {
 		log.Printf("Не соответствие json и rofi. Проверить имена в json.")
 		return
 	}
-
+	
 	if !node.IsScript {
 		fmt.Printf("\x00prompt\x1f%s\n", targetPath)
 		fmt.Printf("\x00clear\x1ftrue\n")
@@ -72,7 +77,9 @@ func main() {
 		for _, value := range node.Content {
 			fmt.Println(value)
 		}
-
+		if targetPath != "/" {
+			fmt.Println("..")
+		}
 	} else {
 		com := node.Content[0]
 		if strings.HasPrefix(com, "./") {
