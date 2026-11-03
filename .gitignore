@@ -1,0 +1,11 @@
+/main
+
+/demo_output.log
+/tmp/rofi_debug.log
+
+/config.json
+
+/scripts/
+
+!/config.json.example
+!/scripts/*.sh.example
