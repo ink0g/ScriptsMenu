@@ -7,6 +7,9 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
+	"strings"
+	"syscall"
 )
 
 
@@ -16,8 +19,14 @@ type MenuNode struct {
 	Content []string  `json:"content"`// Если папка — список имен детей; если скрипт — [0] элемент содержит команду
 }
 
-func initMenu() map[string]MenuNode {
-	config, err := os.ReadFile("config.json")
+func initMenu() (map[string]MenuNode, string) {
+	exePath, err := os.Executable()
+	if err != nil {
+		log.Printf("%v", err)
+	}
+	basePath := filepath.Dir(exePath)
+
+	config, err := os.ReadFile(filepath.Join(basePath, "config.json"))
 	if err != nil {
 		log.Fatalf("Error: %v", err)
 	}
@@ -28,7 +37,7 @@ func initMenu() map[string]MenuNode {
 		log.Fatalf("json pars error: %v", err)
 	}
 
-	return m
+	return m, basePath
 }
 
 
@@ -40,7 +49,7 @@ func main() {
     	defer logFile.Close()
 	}
 
-	menuMap := initMenu()
+	menuMap, basePath := initMenu()
 
 	var targetPath string
 
@@ -65,7 +74,15 @@ func main() {
 		}
 
 	} else {
-		cmd := exec.Command("bash", "-c", node.Content[0])
+		com := node.Content[0]
+		if strings.HasPrefix(com, "./") {
+			com = filepath.Join(basePath, com)	
+		}	
+
+		cmd := exec.Command("bash", "-c", com)
+		cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
+		cmd.Stdout = os.NewFile(0, os.DevNull)
+		cmd.Stderr = os.NewFile(0, os.DevNull)
 		if err := cmd.Start(); err != nil {
 			log.Printf("Ошибка в скрипте: %v", err)
 		}
