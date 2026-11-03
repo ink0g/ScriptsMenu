@@ -1,16 +1,23 @@
 {
   "/": {
     "isScript": false,
-    "content": ["Режимы", "Разработка"]
+    "content": ["Automation", "Direct Command"]
   },
-  "/Режимы": {
-    "name": "Режимы",
-    "isScript": false,
-    "content": ["Хорор", "Рабочий"]
-  },
-  "/Режимы/Хорор": {
-    "name": "Хорор",
+  "/Direct Command": {
     "isScript": true,
-    "content": ["notify-send 'Включен режим хорор'"]
+    "content": ["echo '[$(date +%H:%M:%S)] Hello from direct CLI command!' >> demo_output.log"]
+  },
+  "/Automation": {
+    "isScript": false,
+    "content": ["Run Background Task", "Quick Test"]
+  },
+  "/Automation/Run Background Task": {
+    "isScript": true,
+    "content": ["./scripts/long-task.sh"]
+  },
+  "/Automation/Quick Test": {
+    "isScript": true,
+    "content": ["./scripts/quick-test.sh"]
   }
 }
+
