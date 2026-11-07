@@ -19,22 +19,26 @@ type MenuNode struct {
 	Content []string  `json:"content"`// Если папка — список имен детей; если скрипт — [0] элемент содержит команду
 }
 
+var logFile *os.File
+
+
+
 func initMenu() (map[string]MenuNode, string) {
 	exePath, err := os.Executable()
 	if err != nil {
-		log.Printf("%v", err)
+		log.Printf("[ERROR] File path error: %v", err)
 	}
 	basePath := filepath.Dir(exePath)
 
 	config, err := os.ReadFile(filepath.Join(basePath, "config.json"))
 	if err != nil {
-		log.Fatalf("Error: %v", err)
+		log.Fatalf("[ERROR] Read file: %v", err)
 	}
 
 	m := make(map[string]MenuNode)	
 	
 	if err = json.Unmarshal(config, &m); err != nil {
-		log.Fatalf("json pars error: %v", err)
+		log.Fatalf("[ERROR] JSON pars error: %v", err)
 	}
 
 	return m, basePath
@@ -46,17 +50,19 @@ func main() {
 	logFile, err := os.OpenFile("/tmp/rofi_debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err == nil {
     	log.SetOutput(logFile) 
-    	defer logFile.Close()
+    	// defer logFile.Close() // доделать. Желательно через запуск второго процесса в фоне что бы не было ошибки дискрипторов. Пока что удалил что бы скрипты могли писать в лог файл нормально. 
 	}
 
 	menuMap, basePath := initMenu()
 
 	var targetPath string
-
+	
+	log.Printf("[INFO] ROFI_RETV: %v ROFI_DATA: %v", os.Getenv("ROFI_RETV"), os.Getenv("ROFI_DATA"))
 	if os.Getenv("ROFI_RETV") == "0" {
 		targetPath = "/"
 	} else {
 		choice := os.Args[1]
+		log.Printf("[INFO] Choice: %v", choice)
 		if choice == ".." {
 			targetPath = path.Dir(os.Getenv("ROFI_DATA"))
 		} else {
@@ -66,7 +72,7 @@ func main() {
 	
 	node, exists := menuMap[targetPath]
 	if !exists {
-		log.Printf("Не соответствие json и rofi. Проверить имена в json.")
+		log.Printf("[ERROR] Mismatch between JSON and Rofi. Check the names in the JSON.")
 		return
 	}
 	
@@ -89,9 +95,9 @@ func main() {
 		cmd := exec.Command("bash", "-c", com)
 		cmd.SysProcAttr = &syscall.SysProcAttr{Setsid: true}
 		cmd.Stdout = os.NewFile(0, os.DevNull)
-		cmd.Stderr = os.NewFile(0, os.DevNull)
+		cmd.Stderr = logFile
 		if err := cmd.Start(); err != nil {
-			log.Printf("Ошибка в скрипте: %v", err)
+			log.Printf("[ERROR] Error in script: %v", err)
 		}
 		return
 	}

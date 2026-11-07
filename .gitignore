@@ -6,6 +6,7 @@
 /config.json
 
 /scripts/
+/cmd
 
 !/config.json.example
 !/scripts/*.sh.example
