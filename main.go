@@ -87,7 +87,7 @@ func main() {
 			fmt.Println("..")
 		}
 	} else {
-		com := node.Content[0]
+		com := node.Content[0] + " && notify-send 'Script complete' || (notify-send 'Script error' && exit 1)"
 		if strings.HasPrefix(com, "./") {
 			com = filepath.Join(basePath, com)	
 		}	
